@@ -1,724 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Quick Connect</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="color-scheme" content="light dark">
-    <style>
-        /* Define a custom, subtle ring color for accessibility and focus */
-        :root {
-            --ring: 240 5.9% 10%; /* Zinc/Slate tone */
-        }
-        .dark {
-            --ring: 240 3.7% 15.9%;
-        }
-
-        /* * Customized chip styles for a pill-like look, ensuring consistency 
-         * across light and dark modes.
-         */
-        .chip-on {
-            border-color: #4f46e5; /* indigo-600 */
-            background-color: #4f46e5;
-            color: white;
-            box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); /* Subtle shadow on selected */
-        }
-        
-        .dark .chip-on {
-            border-color: #818cf8; /* indigo-400 */
-            background-color: #818cf8;
-            color: #1f2937; /* Dark text on vibrant chip */
-        }
-        
-        .chip-off {
-            border-color: #e5e7eb; /* zinc-200 */
-            color: #374151; /* zinc-700 */
-            background-color: #f9fafb; /* Lighter background */
-        }
-
-        .chip-off:hover {
-            background-color: #f3f4f6; /* zinc-100 */
-            border-color: #d1d5db;
-        }
-
-        .dark .chip-off {
-            border-color: #3f3f46; /* zinc-700 */
-            color: #d4d4d8; /* zinc-300 */
-            background-color: #18181b; /* Darker background */
-        }
-
-        .dark .chip-off:hover {
-            background-color: #27272a; /* zinc-800 */
-            border-color: #52525b;
-        }
-        
-        .chip-on, .chip-off {
-            transition: all 0.15s ease-in-out;
-        }
-
-        /* Utility classes */
-        .locked-pane {
-            pointer-events: none;
-            opacity: 0.5; /* Reduced opacity for a clearer locked state */
-            filter: grayscale(10%);
-            transition: opacity 0.3s, filter 0.3s;
-        }
-
-        /* Custom pulse animation for loading indicator */
-        @keyframes pulse-fast {
-            0% { transform: scaleX(0); opacity: 0.8; transform-origin: left; }
-            50% { transform: scaleX(1); opacity: 1; transform-origin: left; }
-            51% { transform-origin: right; }
-            100% { transform: scaleX(0); opacity: 0.8; transform-origin: right; }
-        }
-        .animate-pulse-fast {
-            animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        
-        /* Error text style */
-        .error-text {
-            color: #ef4444; /* red-500 */
-            font-weight: 500;
-        }
-        .dark .error-text {
-            color: #f87171; /* red-400 */
-        }
-
-        /* Focus ring for accessibility */
-        button:focus-visible, input:focus-visible {
-            outline: 2px solid transparent;
-            outline-offset: 2px;
-            box-shadow: 0 0 0 2px var(--ring);
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Quick Connect — Lessgo (Branded Shortlinks)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <style>
+    :root { --ring: 240 5.9% 10%; } .dark { --ring: 240 3.7% 15.9%; }
+    .chip-on{border-color:#4f46e5;background:#4f46e5;color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1)}
+    .dark .chip-on{border-color:#818cf8;background:#818cf8;color:#1f2937}
+    .chip-off{border-color:#e5e7eb;color:#374151;background:#f9fafb}.chip-off:hover{background:#f3f4f6;border-color:#d1d5db}
+    .dark .chip-off{border-color:#3f3f46;color:#d4d4d8;background:#18181b}.dark .chip-off:hover{background:#27272a;border-color:#52525b}
+    .chip-on,.chip-off{transition:all .15s ease-in-out}
+    .locked-pane{pointer-events:none;opacity:.5;filter:grayscale(10%);transition:opacity .3s,filter .3s}
+    @keyframes pulse-fast{0%{transform:scaleX(0);opacity:.8;transform-origin:left}50%{transform:scaleX(1);opacity:1;transform-origin:left}51%{transform-origin:right}100%{transform:scaleX(0);opacity:.8;transform-origin:right}}
+    .animate-pulse-fast{animation:pulse-fast 1.5s cubic-bezier(.4,0,.6,1) infinite}
+    .error-text{color:#ef4444;font-weight:500}.dark .error-text{color:#f87171}
+    button:focus-visible,input:focus-visible{outline:2px solid transparent;outline-offset:2px;box-shadow:0 0 0 2px var(--ring)}
+  </style>
 </head>
-
 <body class="min-h-screen bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-12">
-        <header class="mb-10 text-center">
-            <!-- Logo added here -->
-            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center justify-center gap-4">
-                <!-- Small Logo: Lightning Bolt (Zap) using inline SVG -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="text-indigo-600 dark:text-indigo-400 drop-shadow-lg">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                </svg>
-                Lessgo — Quick Connect
-            </h1>
-            <p class="mt-3 text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">
-                Hi there. Let’s have some fun and sort out the easy peasy small talk. Choose your preferences or check out the owner's bio.
-            </p>
-        </header>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-12">
+    <header class="mb-10 text-center">
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center justify-center gap-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="currentColor" stroke="none" class="text-indigo-600 dark:text-indigo-400 drop-shadow-lg">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg> Lessgo — Quick Connect
+      </h1>
+      <p class="mt-3 text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">Short links are now branded via <code>/s/:code</code>, with a TinyURL fallback.</p>
+    </header>
 
-        <section class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <!-- LEFT PANE: READER -->
-            <div id="left-pane" class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-2xl shadow-zinc-100/50 dark:shadow-zinc-950/50 transition-all">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-700">
-                    <h2 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-3 sm:mb-0">Your Preferences (Reader)</h2>
-                    <div class="flex items-center gap-3">
-                        <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="clearLeft">Clear All</button>
-                        <button class="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/50" id="generateLeftLink">Share My Selections</button>
-                    </div>
-                </div>
-                <div id="leftCategories" class="space-y-8"></div>
-
-                <!-- NEW GEMINI FEATURE SECTION: MATCH ANALYSIS -->
-                <div class="mt-10 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-                    <button id="generateMatch" class="w-full text-md px-4 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        <span id="matchButtonText">Check Compatibility & Generate Icebreaker</span>
-                    </button>
-
-                    <div id="matchResults" class="mt-6 hidden p-5 rounded-2xl border border-green-300 dark:border-green-700 bg-green-50 dark:bg-zinc-800 shadow-lg">
-                        <h4 class="text-xl font-bold mb-3 text-green-700 dark:text-green-400">Match Analysis</h4>
-                        <div id="loadingIndicator" class="text-sm text-center py-4 text-zinc-600 dark:text-zinc-400 hidden">
-                            <p>Analyzing profiles... one moment.</p>
-                            <div class="mt-3 w-full h-1.5 bg-zinc-200 rounded-full dark:bg-zinc-700 overflow-hidden">
-                                <div class="h-full bg-green-500 rounded-full animate-pulse-fast"></div>
-                            </div>
-                        </div>
-                        <div id="matchContent" class="space-y-4">
-                            <p id="matchScore" class="text-base font-semibold"></p>
-                            <div class="p-3 bg-white dark:bg-zinc-900 rounded-lg shadow-inner">
-                                <p id="matchAnalysis" class="text-sm text-zinc-700 dark:text-zinc-300 border-l-4 border-green-500 pl-3"></p>
-                            </div>
-                            <div class="pt-4 mt-3 border-t border-zinc-200 dark:border-zinc-700">
-                                <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-2 font-medium">Suggested Icebreaker:</p>
-                                <p id="icebreaker" class="text-lg font-serif italic text-zinc-800 dark:text-zinc-200"></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT PANE: BIO OWNER -->
-            <div id="right-pane" class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-2xl shadow-zinc-100/50 dark:shadow-zinc-950/50 transition-all">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-700">
-                    <div>
-                        <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-3 sm:mb-0">Mi bio BurkeBomb</h2>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">This is the profile owner's fixed status.</p>
-                    </div>
-                    <div class="flex items-center gap-3 mt-3 sm:mt-0">
-                        <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="clearRight">Clear</button>
-                        <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="lockRight">Lock</button>
-                        <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="unlockRight">Unlock</button>
-                        <button class="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/50" id="generateRightLink">Share Bio Link</button>
-                    </div>
-                </div>
-                <div id="rightCategories" class="space-y-8"></div>
-                
-                <!-- NEW GEMINI FEATURE 2: BIO TEXT GENERATION -->
-                <div class="mt-10 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-                    <button id="generateBioText" class="w-full text-md px-4 py-3 rounded-xl bg-pink-600 text-white font-semibold hover:bg-pink-700 transition-colors shadow-xl shadow-pink-500/30 flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                        <span>Generate BurkeBomb Bio Text</span>
-                    </button>
-                    <div id="bioTextOutput" class="mt-6 hidden p-5 rounded-2xl border border-pink-300 dark:border-pink-700 bg-pink-50 dark:bg-zinc-800 shadow-lg">
-                        <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-2 font-medium">Generated Profile Text:</p>
-                        <div id="bioLoadingIndicator" class="text-sm text-center py-4 text-zinc-600 dark:text-zinc-400 hidden">
-                            <p>Drafting bio... one moment.</p>
-                            <div class="mt-3 w-full h-1.5 bg-zinc-200 rounded-full dark:bg-zinc-700 overflow-hidden">
-                                <div class="h-full bg-pink-500 rounded-full animate-pulse-fast"></div>
-                            </div>
-                        </div>
-                        <p id="bioTextContent" class="text-lg font-serif italic text-zinc-800 dark:text-zinc-200"></p>
-                    </div>
-                </div>
-
-                <!-- Share Link Box -->
-                <div id="shareBox" class="hidden mt-10">
-                    <div class="rounded-xl border-4 border-dashed border-indigo-400 dark:border-indigo-600 p-5 bg-indigo-50 dark:bg-zinc-950/50 shadow-lg">
-                        <label class="block text-lg font-bold mb-3 text-indigo-700 dark:text-indigo-400">🔗 Link Ready to Share</label>
-                        <!-- Added dynamic instruction line -->
-                        <p id="shareInstruction" class="text-sm text-zinc-600 dark:text-zinc-400 mb-4"></p>
-                        <div class="mt-2 flex flex-col sm:flex-row gap-3">
-                            <input id="shareUrl" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-zinc-600 dark:text-zinc-300 truncate font-mono focus:ring-2 focus:ring-indigo-500" readonly>
-                            <button id="copyLink" class="shrink-0 text-sm px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors shadow-md flex items-center justify-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1-1.4-2-2.3-2-2h4c0 1.1 0 2 0 2v4c0 1.1 0 2 0 2h-4c-1.1-1.4-2-2.3-2-2"/></svg>
-                                Copy Link
-                            </button>
-                        </div>
-                        <p id="copyFeedback" class="text-sm mt-2 font-medium text-green-600 dark:text-green-400 hidden"></p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-    <template id="cat">
-        <div class="space-y-3">
-            <div class="flex items-center justify-between">
-                <!-- Cleaner category header styling -->
-                <h3 class="text-sm font-bold text-zinc-700 dark:text-zinc-300 tracking-wider uppercase"></h3>
-                <span class="text-xs text-indigo-500 dark:text-indigo-400 font-medium count"></span>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"></div>
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div id="left-pane" class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-2xl shadow-zinc-100/50 dark:shadow-zinc-950/50 transition-all">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-700">
+          <h2 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400 mb-3 sm:mb-0">Your Preferences (Reader)</h2>
+          <div class="flex items-center gap-3">
+            <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="clearLeft">Clear All</button>
+            <button class="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/50" id="generateLeftLink">Share My Selections</button>
+          </div>
         </div>
-    </template>
+        <div id="leftCategories" class="space-y-8"></div>
 
-    <script>
-        // API Configuration
-        const API_KEY = ""; // Canvas will provide this key at runtime
-        const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
-        
-        // Data Structure for the profile options
-        const DATA = [
-            // NEW: Identity category
-            { type: "I am", options: ["Gay", "Bi", "Straight", "Fuck Knows"] }, 
-            { type: "Looking for", options: ["Friends", "Fun", "Hardcore"] },
-            // UPDATED: Position category
-            { type: "Position", options: ["Top","Bot","Verse", "Verse Bot", "Verse Top"] },
-            { type: "Kinks", options: ["Leather", "Cigar", "BDSM", "Water Sports", "Blood", "Scat", "Public Play", "Nipple Play", "Recordings", "Fisting", "Impact Play", "Exhibitionism", "Gloryholes", "Mirror Play", "Sounding", "Voyeurism","Groups","PNP","Shibari","Role Play",] },
-            { type: "Fetishes", options: ["Armpits", "Ass", "Hard Cocks", "Muscles", "Piercings", "Tattoos"] },
-            { type: "Into", options: ["Bars/Clubs", "Cars", "Parks", "Restrooms", "Gay Sauna", "Outdoors", "Saunas", "Truckstop", "Cruising", "Fucking", "Rimming", "Oral"] },
-            { type: "Location", text: true, placeholder: "City / area" },
-            { type: "Pics", options: ["NFSW"] },
-            { type: "Status", options: ["Pos(undetectable)", "Neg(on Prep)", "STD(tbd)"] },
-            { type: "Relationship", options: ["Married", "Single", "Involved"] }
-        ];
+        <div class="mt-10 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+          <button id="generateMatch" class="w-full text-md px-4 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors shadow-xl shadow-green-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-zap"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span id="matchButtonText">Check Compatibility & Generate Icebreaker</span>
+          </button>
+          <div id="matchResults" class="mt-6 hidden p-5 rounded-2xl border border-green-300 dark:border-green-700 bg-green-50 dark:bg-zinc-800 shadow-lg">
+            <h4 class="text-xl font-bold mb-3 text-green-700 dark:text-green-400">Match Analysis</h4>
+            <div id="loadingIndicator" class="text-sm text-center py-4 text-zinc-600 dark:text-zinc-400 hidden">
+              <p>Analyzing profiles... one moment.</p>
+              <div class="mt-3 w-full h-1.5 bg-zinc-200 rounded-full dark:bg-zinc-700 overflow-hidden">
+                <div class="h-full bg-green-500 rounded-full animate-pulse-fast"></div>
+              </div>
+            </div>
+            <div id="matchContent" class="space-y-4">
+              <p id="matchScore" class="text-base font-semibold"></p>
+              <div class="p-3 bg-white dark:bg-zinc-900 rounded-lg shadow-inner">
+                <p id="matchAnalysis" class="text-sm text-zinc-700 dark:text-zinc-300 border-l-4 border-green-500 pl-3"></p>
+              </div>
+              <div class="pt-4 mt-3 border-t border-zinc-200 dark:border-zinc-700">
+                <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-2 font-medium">Suggested Icebreaker:</p>
+                <p id="icebreaker" class="text-lg font-serif italic text-zinc-800 dark:text-zinc-200"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        const qs = (s, el = document) => el.querySelector(s);
-        const tpl = id => document.importNode(qs(id).content, true);
+      <div id="right-pane" class="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-8 shadow-2xl shadow-zinc-100/50 dark:shadow-zinc-950/50 transition-all">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-700">
+          <div>
+            <h2 class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-3 sm:mb-0">Mi bio BurkeBomb</h2>
+            <p class="text-sm text-zinc-500 dark:text-zinc-400 mt-1">This is the profile owner's fixed status.</p>
+          </div>
+          <div class="flex items-center gap-3 mt-3 sm:mt-0">
+            <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="clearRight">Clear</button>
+            <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="lockRight">Lock</button>
+            <button class="text-sm px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shadow-sm" id="unlockRight">Unlock</button>
+            <button class="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/50" id="generateRightLink">Share Bio Link</button>
+          </div>
+        </div>
+        <div id="rightCategories" class="space-y-8"></div>
 
-        /**
-         * Generic exponential backoff for fetch requests.
-         * @param {function} fn - The function to retry.
-         * @param {number} retries - Number of retries left.
-         */
-        async function exponentialBackoff(fn, retries = 5) {
-            let delay = 1000;
-            for (let i = 0; i < retries; i++) {
-                try {
-                    return await fn();
-                } catch (error) {
-                    if (i === retries - 1) {
-                        throw error;
-                    }
-                    // Do not log retry attempts as per instructions
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2;
-                }
-            }
+        <div class="mt-10 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+          <button id="generateBioText" class="w-full text-md px-4 py-3 rounded-xl bg-pink-600 text-white font-semibold hover:bg-pink-700 transition-colors shadow-xl shadow-pink-500/30 flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            <span>Generate BurkeBomb Bio Text</span>
+          </button>
+          <div id="bioTextOutput" class="mt-6 hidden p-5 rounded-2xl border border-pink-300 dark:border-pink-700 bg-pink-50 dark:bg-zinc-800 shadow-lg">
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-2 font-medium">Generated Profile Text:</p>
+            <div id="bioLoadingIndicator" class="text-sm text-center py-4 text-zinc-600 dark:text-zinc-400 hidden">
+              <p>Drafting bio... one moment.</p>
+              <div class="mt-3 w-full h-1.5 bg-zinc-200 rounded-full dark:bg-zinc-700 overflow-hidden">
+                <div class="h-full bg-pink-500 rounded-full animate-pulse-fast"></div>
+              </div>
+            </div>
+            <p id="bioTextContent" class="text-lg font-serif italic text-zinc-800 dark:text-zinc-200"></p>
+          </div>
+        </div>
+
+        <div id="shareBox" class="hidden mt-10">
+          <div class="rounded-xl border-4 border-dashed border-indigo-400 dark:border-indigo-600 p-5 bg-indigo-50 dark:bg-zinc-950/50 shadow-lg">
+            <label class="block text-lg font-bold mb-3 text-indigo-700 dark:text-indigo-400">🔗 Link Ready to Share</label>
+            <p id="shareInstruction" class="text-sm text-zinc-600 dark:text-zinc-400 mb-4"></p>
+            <div class="mt-2 flex flex-col sm:flex-row gap-3">
+              <input id="shareUrl" class="w-full text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 px-3 py-2.5 text-zinc-600 dark:text-zinc-300 truncate font-mono focus:ring-2 focus:ring-indigo-500" readonly>
+              <button id="copyLink" class="shrink-0 text-sm px-4 py-2 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors shadow-md flex items-center justify-center gap-1">Copy Link</button>
+            </div>
+            <p id="copyFeedback" class="text-sm mt-2 font-medium text-green-600 dark:text-green-400 hidden"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <template id="cat">
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-zinc-700 dark:text-zinc-300 tracking-wider uppercase"></h3>
+        <span class="text-xs text-indigo-500 dark:text-indigo-400 font-medium count"></span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"></div>
+    </div>
+  </template>
+
+  <script>
+    const API_KEY = "";
+    const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+
+    const DATA = [
+      { type: "I am", options: ["Gay", "Bi", "Straight", "Fuck Knows"] }, 
+      { type: "Looking for", options: ["Friends", "Fun", "Hardcore"] },
+      { type: "Position", options: ["Top","Bot","Verse", "Verse Bot", "Verse Top"] },
+      { type: "Kinks", options: ["Leather", "Cigar", "BDSM", "Water Sports", "Blood", "Scat", "Public Play", "Nipple Play", "Recordings", "Fisting", "Impact Play", "Exhibitionism", "Gloryholes", "Mirror Play", "Sounding", "Voyeurism","Groups","PNP","Shibari","Role Play",] },
+      { type: "Fetishes", options: ["Armpits", "Ass", "Hard Cocks", "Muscles", "Piercings", "Tattoos"] },
+      { type: "Into", options: ["Bars/Clubs", "Cars", "Parks", "Restrooms", "Gay Sauna", "Outdoors", "Saunas", "Truckstop", "Cruising", "Fucking", "Rimming", "Oral"] },
+      { type: "Location", text: true, placeholder: "City / area" },
+      { type: "Pics", options: ["NFSW"] },
+      { type: "Status", options: ["Pos(undetectable)", "Neg(on Prep)", "STD(tbd)"] },
+      { type: "Relationship", options: ["Married", "Single", "Involved"] }
+    ];
+
+    const qs = (s, el = document) => el.querySelector(s);
+    const tpl = id => document.importNode(qs(id).content, true);
+
+    async function exponentialBackoff(fn, retries = 5) {
+      let delay = 1000;
+      for (let i = 0; i < retries; i++) {
+        try { return await fn(); }
+        catch (e) { if (i === retries - 1) throw e; await new Promise(r => setTimeout(r, delay)); delay *= 2; }
+      }
+    }
+
+    function renderSide(paneSel, state) {
+      const container = qs(paneSel === "#left-pane" ? "#leftCategories" : "#rightCategories");
+      container.innerHTML = "";
+      const checkLeftState = () => {
+        const hasSel = Object.values(leftState.sel).some(set => set.size > 0);
+        const hasText = Object.values(leftState.text).some(val => val && val.trim().length > 0);
+        qs("#generateMatch").disabled = !(hasSel || hasText);
+      };
+
+      DATA.forEach(cat => {
+        const node = tpl("#cat");
+        qs("h3", node).textContent = cat.type;
+        const grid = node.querySelector(".grid");
+        const count = node.querySelector(".count");
+
+        if (cat.text) {
+          const wrap = document.createElement("div");
+          wrap.className = "col-span-full";
+          const input = document.createElement("input");
+          input.type = "text";
+          input.placeholder = cat.placeholder || "";
+          input.value = state.text?.[cat.type] || "";
+          input.setAttribute("aria-label", cat.type);
+          input.className = "w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500 shadow-inner transition-colors";
+          input.addEventListener("input", e => { state.text[cat.type] = e.target.value; if (paneSel === "#left-pane") checkLeftState(); });
+          wrap.appendChild(input); grid.appendChild(wrap);
+        } else {
+          const set = state.sel[cat.type] ||= new Set();
+          (cat.options || []).forEach(opt => {
+            const b = document.createElement("button"); b.type = "button";
+            const on = set.has(opt);
+            b.className = ["w-full text-xs px-2 py-1.5 rounded-full border transition-colors duration-200 whitespace-nowrap overflow-hidden text-ellipsis", on ? "chip-on" : "chip-off"].join(" ");
+            b.setAttribute("aria-pressed", on ? "true" : "false"); b.textContent = opt;
+            b.addEventListener("click", () => { if (set.has(opt)) set.delete(opt); else set.add(opt); renderSide(paneSel, state); if (paneSel === "#left-pane") checkLeftState(); });
+            grid.appendChild(b);
+          });
+          count.textContent = set.size ? `${set.size} selected` : "";
         }
+        container.appendChild(node);
+      });
+      if (paneSel === "#left-pane") checkLeftState();
+    }
 
-        /**
-         * Renders the category chips and inputs for a given pane.
-         * @param {string} paneSel - The CSS selector for the pane container (#left-pane or #right-pane).
-         * @param {object} state - The state object (leftState or rightState).
-         */
-        function renderSide(paneSel, state) {
-            const container = qs(paneSel === "#left-pane" ? "#leftCategories" : "#rightCategories");
-            container.innerHTML = ""; 
+    function encodeState(state) {
+      const obj = { sel: Object.fromEntries(Object.entries(state.sel).map(([k, v]) => [k, Array.from(v)])), text: state.text };
+      return LZString.compressToEncodedURIComponent(JSON.stringify(obj));
+    }
+    function decodeState(s) {
+      try {
+        const jsonStr = LZString.decompressFromEncodedURIComponent(s);
+        const obj = JSON.parse(jsonStr);
+        const st = { sel: {}, text: obj.text || {} };
+        Object.entries(obj.sel || {}).forEach(([k, arr]) => st.sel[k] = new Set(arr));
+        return st;
+      } catch (e) { console.error("Decode failed:", e); return null; }
+    }
 
-            // Function to check if the left pane has any selections for enabling the Gemini button
-            const checkLeftState = () => {
-                const hasSel = Object.values(leftState.sel).some(set => set.size > 0);
-                const hasText = Object.values(leftState.text).some(val => val && val.trim().length > 0);
-                qs("#generateMatch").disabled = !(hasSel || hasText);
-            };
-
-            DATA.forEach(cat => {
-                const node = tpl("#cat");
-                qs("h3", node).textContent = cat.type;
-                const grid = node.querySelector(".grid");
-                const count = node.querySelector(".count");
-
-                if (cat.text) {
-                    // Handle text input
-                    const wrap = document.createElement("div");
-                    wrap.className = "col-span-full"; 
-                    const input = document.createElement("input");
-                    input.type = "text";
-                    input.placeholder = cat.placeholder || "";
-                    input.value = state.text?.[cat.type] || "";
-                    input.setAttribute("aria-label", cat.type); 
-                    input.className = "w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500 shadow-inner transition-colors";
-                    
-                    input.addEventListener("input", e => {
-                        state.text[cat.type] = e.target.value;
-                        if (paneSel === "#left-pane") checkLeftState();
-                    });
-                    
-                    wrap.appendChild(input);
-                    grid.appendChild(wrap);
-                } else {
-                    // Handle selectable chips (buttons)
-                    const set = state.sel[cat.type] ||= new Set();
-                    (cat.options || []).forEach(opt => {
-                        const b = document.createElement("button");
-                        b.type = "button";
-                        const on = set.has(opt);
-                        
-                        // Updated button styling for a pill look and consistent transition
-                        b.className = [
-                            "w-full text-xs px-2 py-1.5 rounded-full border transition-colors duration-200 whitespace-nowrap overflow-hidden text-ellipsis",
-                            on ? "chip-on" : "chip-off"
-                        ].join(" ");
-
-                        b.setAttribute("aria-pressed", on ? "true" : "false");
-                        b.textContent = opt;
-
-                        b.addEventListener("click", () => {
-                            if (set.has(opt)) set.delete(opt);
-                            else set.add(opt);
-                            renderSide(paneSel, state); 
-                            if (paneSel === "#left-pane") checkLeftState();
-                        });
-                        grid.appendChild(b);
-                    });
-                    count.textContent = set.size ? `${set.size} selected` : "";
-                }
-                container.appendChild(node);
-            });
-            // Ensure button state is checked after initial render
-            if (paneSel === "#left-pane") checkLeftState();
+    async function shortenViaBrand(longUrl) {
+      try {
+        const resp = await fetch("/api/shorten", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: longUrl })
+        });
+        if (!resp.ok) throw new Error("brand shortener failed");
+        const data = await resp.json();
+        return data.shortUrl || longUrl;
+      } catch (e) {
+        // Fallback to TinyURL
+        try {
+          const tiny = await fetch("https://tinyurl.com/api-create.php?url=" + encodeURIComponent(longUrl));
+          if (!tiny.ok) throw new Error("tiny failed");
+          return await tiny.text();
+        } catch {
+          return longUrl;
         }
+      }
+    }
 
-        /**
-         * Encodes the state object into a URL-safe Base64 string.
-         * @param {object} state - The state object.
-         * @returns {string} The encoded string.
-         */
-        function encodeState(state) {
-            const obj = {
-                sel: Object.fromEntries(Object.entries(state.sel).map(([k, v]) => [k, Array.from(v)])),
-                text: state.text
-            };
-            return btoa(encodeURIComponent(JSON.stringify(obj)));
-        }
+    function formatStateForLLM(state) {
+      const selections = Object.entries(state.sel).map(([cat, set]) => {
+        const items = Array.from(set).join(", ");
+        return items ? `${cat}: [${items}]` : null;
+      }).filter(Boolean);
+      const texts = Object.entries(state.text).map(([cat, text]) => text && text.trim() ? `${cat}: "${text.trim()}"` : null).filter(Boolean);
+      return [...selections, ...texts].join("\n");
+    }
 
-        /**
-         * Decodes a URL-safe Base64 string back into a state object.
-         * @param {string} s - The encoded string.
-         * @returns {object|null} The decoded state object or null if decoding fails.
-         */
-        function decodeState(s) {
-            try {
-                const jsonStr = decodeURIComponent(atob(s));
-                const obj = JSON.parse(jsonStr);
-                
-                if (typeof obj !== 'object' || obj === null) return null;
-
-                const st = { 
-                    sel: {}, 
-                    text: (typeof obj.text === 'object' && obj.text !== null) ? obj.text : {} 
-                };
-
-                if (typeof obj.sel === 'object' && obj.sel !== null) {
-                    Object.entries(obj.sel).forEach(([k, arr]) => {
-                        if (Array.isArray(arr)) {
-                            st.sel[k] = new Set(arr);
-                        }
-                    });
-                }
-                return st;
-            } catch (e) {
-                console.error("Failed to decode state:", e);
-                return null;
-            }
-        }
-
-        // Global State Objects
-        const leftState = { sel: {}, text: {} };
-        const rightState = { sel: {}, text: {} };
-        const rightPaneEl = qs("#right-pane");
-        const shareInstructionEl = qs("#shareInstruction");
-
-        // --- Shared LLM Formatting ---
-        function formatStateForLLM(state) {
-            const selections = Object.entries(state.sel)
-                .map(([cat, set]) => {
-                    const items = Array.from(set).join(', ');
-                    return items ? `${cat}: [${items}]` : null;
-                })
-                .filter(Boolean);
-
-            const texts = Object.entries(state.text)
-                .map(([cat, text]) => {
-                    return text && text.trim() ? `${cat}: "${text.trim()}"` : null;
-                })
-                .filter(Boolean);
-
-            return [...selections, ...texts].join('\n');
-        }
-
-        // --- LLM Feature 1 Logic: Compatibility Matcher ---
-        async function generateMatchAnalysis() {
-            qs("#matchResults").classList.remove("hidden");
-            qs("#loadingIndicator").classList.remove("hidden");
-            qs("#matchContent").classList.add("hidden");
-            qs("#generateMatch").disabled = true;
-
-            try {
-                const readerProfile = formatStateForLLM(leftState);
-                const ownerProfile = formatStateForLLM(rightState);
-                
-                if (!readerProfile.trim() || !ownerProfile.trim()) {
-                     throw new Error("Profiles are empty. Select options before matching.");
-                }
-
-                const systemPrompt = `You are a witty, insightful, and slightly mischievous compatibility analyst for a niche social connection app called Lessgo. Your goal is to compare two profiles: the 'Reader' (the person viewing the bio) and the 'Owner' (the fixed bio). You must provide a JSON object with a compatibility score, and a personalized icebreaker message based on the two profiles.
-
+    async function generateMatchAnalysis() {
+      qs("#matchResults").classList.remove("hidden");
+      qs("#loadingIndicator").classList.remove("hidden");
+      qs("#matchContent").classList.add("hidden");
+      qs("#generateMatch").disabled = true;
+      try {
+        const readerProfile = formatStateForLLM(leftState);
+        const ownerProfile = formatStateForLLM(rightState);
+        if (!readerProfile.trim() || !ownerProfile.trim()) throw new Error("Profiles are empty. Select options before matching.");
+        const systemPrompt = `You are a witty, insightful, and slightly mischievous compatibility analyst for a niche social connection app called Lessgo. Your goal is to compare two profiles: the 'Reader' (the person viewing the bio) and the 'Owner' (the fixed bio). You must provide a JSON object with a compatibility score, and a personalized icebreaker message based on the two profiles.
 The Owner is 'BurkeBomb' and the Reader is 'You'. The analysis should be sharp and focused on the provided selections.
+JSON Schema:{ "compatibilityScore": "High" | "Medium" | "Low","analysis": "A concise, 2-3 sentence summary of the main points of connection and divergence.","icebreaker": "A short, witty, and personalized message (1-2 sentences) the reader can use to start a chat."}`;
+        const userQuery = `Compare the Reader's Profile and the Owner's Profile.\n---\nReader's Profile (You):\n${readerProfile}\n---\nOwner's Profile (BurkeBomb):\n${ownerProfile}\n---\nGenerate the structured JSON response based on this comparison.`;
+        const payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json", responseSchema: { type: "OBJECT", properties: { "compatibilityScore": { "type": "STRING", "enum": ["High","Medium","Low"] }, "analysis": { "type": "STRING" }, "icebreaker": { "type": "STRING" } }, propertyOrdering: ["compatibilityScore","analysis","icebreaker"] }}};
+        const response = await exponentialBackoff(async () => fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }));
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const result = await response.json();
+        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonText) throw new Error("Empty LLM response");
+        const parsed = JSON.parse(jsonText);
+        displayMatchResults(parsed);
+      } catch (e) {
+        qs("#matchScore").innerHTML = `<span class="error-text">Error: ${e.message.split(".")[0]}</span>`;
+        qs("#matchAnalysis").textContent = "Could not generate match. Please check selections and try again.";
+        qs("#icebreaker").textContent = "";
+        qs("#matchContent").classList.remove("hidden");
+      } finally {
+        qs("#loadingIndicator").classList.add("hidden");
+        qs("#generateMatch").disabled = false;
+      }
+    }
 
-JSON Schema:
-{
-  "compatibilityScore": "High" | "Medium" | "Low",
-  "analysis": "A concise, 2-3 sentence summary of the main points of connection and divergence.",
-  "icebreaker": "A short, witty, and personalized message (1-2 sentences) the reader can use to start a chat."
-}
-`;
+    function displayMatchResults(data) {
+      const scoreColor = data.compatibilityScore === "High" ? "text-green-600 dark:text-green-400" : data.compatibilityScore === "Medium" ? "text-yellow-600 dark:text-yellow-400" : "text-red-600 dark:text-red-400";
+      qs("#matchScore").innerHTML = `Score: <span class="font-extrabold ${scoreColor}">${data.compatibilityScore}</span>`;
+      qs("#matchAnalysis").textContent = data.analysis;
+      qs("#icebreaker").textContent = data.icebreaker;
+      qs("#matchContent").classList.remove("hidden");
+    }
 
-                const userQuery = `Compare the Reader's Profile and the Owner's Profile.
+    const leftState = { sel: {}, text: {} };
+    const rightState = { sel: {}, text: {} };
+    const rightPaneEl = qs("#right-pane");
+    const shareInstructionEl = qs("#shareInstruction");
 
----
-Reader's Profile (You):
-${readerProfile}
----
-Owner's Profile (BurkeBomb):
-${ownerProfile}
----
+    const url = new URL(location.href);
+    const ownerBio = url.searchParams.get("owner_bio");
+    const readerStateParam = url.searchParams.get("reader_state");
+    const isLocked = url.searchParams.get("locked") === "1";
 
-Generate the structured JSON response based on this comparison.`;
+    if (ownerBio) { const d = decodeState(ownerBio); if (d) { rightState.sel = d.sel; rightState.text = d.text; } rightPaneEl.classList.add("locked-pane"); }
+    else if (isLocked) { rightPaneEl.classList.add("locked-pane"); }
+    if (readerStateParam) { const d = decodeState(readerStateParam); if (d) { leftState.sel = d.sel; leftState.text = d.text; } }
+    renderSide("#left-pane", leftState); renderSide("#right-pane", rightState);
 
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    },
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                "compatibilityScore": { "type": "STRING", "enum": ["High", "Medium", "Low"] },
-                                "analysis": { "type": "STRING" },
-                                "icebreaker": { "type": "STRING" }
-                            },
-                            propertyOrdering: ["compatibilityScore", "analysis", "icebreaker"]
-                        }
-                    }
-                };
+    qs("#clearLeft").addEventListener("click", () => { leftState.sel = {}; leftState.text = {}; renderSide("#left-pane", leftState); qs("#matchResults").classList.add("hidden"); });
+    qs("#clearRight").addEventListener("click", () => { rightState.sel = {}; rightState.text = {}; renderSide("#right-pane", rightState); qs("#shareBox").classList.add("hidden"); rightPaneEl.classList.remove("locked-pane"); });
+    qs("#lockRight").addEventListener("click", () => rightPaneEl.classList.add("locked-pane"));
+    qs("#unlockRight").addEventListener("click", () => rightPaneEl.classList.remove("locked-pane"));
 
-                const response = await exponentialBackoff(async () => {
-                    return fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                });
+    // Branded shortlinks with fallback
+    qs("#generateRightLink").addEventListener("click", async () => {
+      const rightCode = encodeState(rightState);
+      const baseUrl = new URL(location.href.split('?')[0]);
+      const rightShare = new URL(baseUrl);
+      rightShare.searchParams.set("owner_bio", rightCode);
+      rightShare.searchParams.set("locked", "1");
+      const longUrl = rightShare.toString();
+      const shortUrl = await shortenViaBrand(longUrl);
+      qs("#shareUrl").value = shortUrl;
+      shareInstructionEl.textContent = "Share this short link — it loads your locked BurkeBomb bio.";
+      qs("#shareBox").classList.remove("hidden"); qs("#copyFeedback").classList.add("hidden");
+    });
 
-                if (!response.ok) {
-                    const errorDetails = await response.text();
-                    throw new Error(`API error: ${response.status} ${response.statusText}. Details: ${errorDetails.substring(0, 100)}...`);
-                }
+    qs("#generateLeftLink").addEventListener("click", async () => {
+      const leftCode = encodeState(leftState);
+      const baseUrl = new URL(location.href.split('?')[0]);
+      const leftShare = new URL(baseUrl);
+      leftShare.searchParams.set("reader_state", leftCode);
+      const longUrl = leftShare.toString();
+      const shortUrl = await shortenViaBrand(longUrl);
+      qs("#shareUrl").value = shortUrl;
+      shareInstructionEl.textContent = "Share this short link — it preloads your Reader selections.";
+      qs("#shareBox").classList.remove("hidden"); qs("#copyFeedback").classList.add("hidden");
+    });
 
-                const result = await response.json();
-                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    qs("#generateMatch").addEventListener("click", generateMatchAnalysis);
+    qs("#generateBioText").addEventListener("click", async () => {
+      const bioTextOutputEl = qs("#bioTextOutput");
+      const bioTextContentEl = qs("#bioTextContent");
+      const bioLoadingIndicatorEl = qs("#bioLoadingIndicator");
+      const generateBioTextBtn = qs("#generateBioText");
+      bioTextOutputEl.classList.remove("hidden"); bioTextContentEl.innerHTML = ""; bioLoadingIndicatorEl.classList.remove("hidden"); generateBioTextBtn.disabled = true;
+      try {
+        const ownerProfile = formatStateForLLM(rightState);
+        if (!ownerProfile.trim()) throw new Error("BurkeBomb's profile is empty. Select options before generating text.");
+        const systemPrompt = `You are BurkeBomb's personal marketing assistant. Your task is to take the structured profile preferences and convert them into a short, witty, and intriguing natural language bio suitable for a social connection app. The tone should be confident, slightly edgy, and concise (maximum 2 short sentences). The output must be just the text, nothing else.`;
+        const userQuery = `Create a profile bio (max 2 short sentences) for the following structured data:\n\nStructured Profile Data (BurkeBomb):\n${ownerProfile}\n\nBio Text:`;
+        const payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
+        const response = await exponentialBackoff(async () => fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }));
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        const result = await response.json();
+        const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error("Empty LLM response");
+        bioTextContentEl.textContent = text.trim();
+      } catch (e) {
+        bioTextContentEl.innerHTML = `<span class="error-text">Failed to generate bio: ${e.message.split(".")[0]}</span>`;
+      } finally { bioLoadingIndicatorEl.classList.add("hidden"); generateBioTextBtn.disabled = false; }
+    });
 
-                if (!jsonText) {
-                    throw new Error("Received an empty response from the LLM.");
-                }
-
-                const parsedJson = JSON.parse(jsonText);
-                displayMatchResults(parsedJson);
-
-            } catch (error) {
-                console.error("Match Analysis Failed:", error);
-                qs("#matchScore").innerHTML = `<span class="error-text">Error: ${error.message.split(".")[0]}</span>`;
-                qs("#matchAnalysis").textContent = 'Could not generate match. Please check selections and try again.';
-                qs("#icebreaker").textContent = '';
-                qs("#matchContent").classList.remove("hidden");
-
-            } finally {
-                qs("#loadingIndicator").classList.add("hidden");
-                qs("#generateMatch").disabled = false; // Re-enable button on completion/error
-            }
-        }
-
-        function displayMatchResults(data) {
-            const scoreColor = data.compatibilityScore === "High" ? "text-green-600 dark:text-green-400" :
-                               data.compatibilityScore === "Medium" ? "text-yellow-600 dark:text-yellow-400" :
-                               "text-red-600 dark:text-red-400";
-            
-            qs("#matchScore").innerHTML = `Score: <span class="font-extrabold ${scoreColor}">${data.compatibilityScore}</span>`;
-            qs("#matchAnalysis").textContent = data.analysis;
-            qs("#icebreaker").textContent = data.icebreaker;
-            qs("#matchContent").classList.remove("hidden");
-        }
-        // --- END LLM Feature 1 Logic ---
-        
-        // --- LLM Feature 2 Logic: Bio Text Generator ---
-        async function generateBioText() {
-            const bioTextOutputEl = qs("#bioTextOutput");
-            const bioTextContentEl = qs("#bioTextContent");
-            const bioLoadingIndicatorEl = qs("#bioLoadingIndicator");
-            const generateBioTextBtn = qs("#generateBioText");
-
-            bioTextOutputEl.classList.remove("hidden");
-            bioTextContentEl.innerHTML = "";
-            bioLoadingIndicatorEl.classList.remove("hidden");
-            generateBioTextBtn.disabled = true;
-
-            try {
-                const ownerProfile = formatStateForLLM(rightState);
-                
-                if (!ownerProfile.trim()) {
-                     throw new Error("BurkeBomb's profile is empty. Select options before generating text.");
-                }
-
-                const systemPrompt = `You are BurkeBomb's personal marketing assistant. Your task is to take the structured profile preferences and convert them into a short, witty, and intriguing natural language bio suitable for a social connection app. The tone should be confident, slightly edgy, and concise (maximum 2 short sentences). The output must be just the text, nothing else.`;
-
-                const userQuery = `Create a profile bio (max 2 short sentences) for the following structured data:
-
-Structured Profile Data (BurkeBomb):
-${ownerProfile}
-
-Bio Text:`;
-
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    },
-                    // No need for JSON schema, we want plain text output
-                };
-
-                const response = await exponentialBackoff(async () => {
-                    return fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                });
-
-                if (!response.ok) {
-                    const errorDetails = await response.text();
-                    throw new Error(`API error: ${response.status} ${response.statusText}. Details: ${errorDetails.substring(0, 100)}...`);
-                }
-
-                const result = await response.json();
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                if (!text) {
-                    throw new Error("Received an empty text response from the LLM.");
-                }
-                
-                bioTextContentEl.textContent = text.trim();
-
-            } catch (error) {
-                console.error("Bio Text Generation Failed:", error);
-                bioTextContentEl.innerHTML = `<span class="error-text">Failed to generate bio: ${error.message.split(".")[0]}</span>`;
-            } finally {
-                bioLoadingIndicatorEl.classList.add("hidden");
-                generateBioTextBtn.disabled = false;
-            }
-        }
-        // --- END LLM Feature 2 Logic ---
-
-
-        // --- Initialization ---
-
-        const url = new URL(location.href);
-        // Changed to specific parameters to load into the correct pane
-        const ownerBio = url.searchParams.get("owner_bio");
-        const readerStateParam = url.searchParams.get("reader_state");
-        const isLocked = url.searchParams.get("locked") === "1"; 
-
-        // 1. Load Owner Bio (Right Pane - Fixed Profile)
-        if (ownerBio) {
-            const d = decodeState(ownerBio);
-            if (d) {
-                rightState.sel = d.sel;
-                rightState.text = d.text;
-            }
-            // Always lock the right pane if an owner_bio is provided
-            rightPaneEl.classList.add("locked-pane"); 
-        } else if (isLocked) {
-             // Handle case where link only had ?locked=1 but no bio data
-             rightPaneEl.classList.add("locked-pane");
-        }
-
-        // 2. Load Reader State (Left Pane - Temporary Selections)
-        if (readerStateParam) {
-            const d = decodeState(readerStateParam);
-            if (d) {
-                leftState.sel = d.sel;
-                leftState.text = d.text;
-            }
-        }
-        
-        // Render both sides
-        renderSide("#left-pane", leftState);
-        renderSide("#right-pane", rightState);
-
-        // --- Event Listeners ---
-
-        // Clear Left
-        qs("#clearLeft").addEventListener("click", () => {
-            leftState.sel = {};
-            leftState.text = {};
-            renderSide("#left-pane", leftState);
-            qs("#matchResults").classList.add("hidden");
-        });
-
-        // Clear Right
-        qs("#clearRight").addEventListener("click", () => {
-            rightState.sel = {};
-            rightState.text = {};
-            renderSide("#right-pane", rightState);
-            qs("#shareBox").classList.add("hidden");
-            rightPaneEl.classList.remove("locked-pane"); 
-        });
-
-        // Lock/Unlock Right
-        qs("#lockRight").addEventListener("click", () => rightPaneEl.classList.add("locked-pane"));
-        qs("#unlockRight").addEventListener("click", () => rightPaneEl.classList.remove("locked-pane"));
-
-        // Generate Right Link (Bio Link - fixed profile)
-        qs("#generateRightLink").addEventListener("click", () => {
-            const rightCode = encodeState(rightState);
-            const baseUrl = new URL(location.href.split('?')[0]); 
-            const rightShare = new URL(baseUrl);
-            rightShare.searchParams.set("owner_bio", rightCode); // Changed to owner_bio
-            rightShare.searchParams.set("locked", "1"); 
-            
-            qs("#shareUrl").value = rightShare.toString();
-            // Updated instruction
-            shareInstructionEl.textContent = "Share this link. It loads your fixed bio (BurkeBomb) into the recipient's Owner pane and locks it.";
-            qs("#shareBox").classList.remove("hidden");
-            qs("#copyFeedback").classList.add("hidden");
-        });
-
-        // Generate Left Link (Shares current temporary selection)
-        qs("#generateLeftLink").addEventListener("click", () => {
-            const leftCode = encodeState(leftState);
-            const baseUrl = new URL(location.href.split('?')[0]);
-            const leftShare = new URL(baseUrl);
-            leftShare.searchParams.set("reader_state", leftCode); // Changed to reader_state
-            
-            qs("#shareUrl").value = leftShare.toString();
-            // Updated instruction
-            shareInstructionEl.textContent = "Share this link. It loads your current selections into the recipient's Reader pane.";
-            qs("#shareBox").classList.remove("hidden");
-            qs("#copyFeedback").classList.add("hidden");
-        });
-        
-        // Match Analysis Button Listener
-        qs("#generateMatch").addEventListener("click", generateMatchAnalysis);
-        
-        // Bio Text Generation Listener
-        qs("#generateBioText").addEventListener("click", generateBioText);
-
-
-        // Copy Link
-        qs("#copyLink").addEventListener("click", async () => {
-            const v = qs("#shareUrl").value;
-            const btn = qs("#copyLink");
-            const feedback = qs("#copyFeedback");
-
-            btn.textContent = "Copying...";
-            feedback.classList.add("hidden");
-
-            try {
-                await navigator.clipboard.writeText(v);
-                
-                btn.textContent = "Copied!";
-                feedback.textContent = "Link successfully copied to clipboard.";
-                feedback.classList.remove("hidden");
-                
-                setTimeout(() => {
-                    btn.textContent = "Copy Link";
-                }, 2000);
-            } catch (err) {
-                // Fallback using execCommand
-                try {
-                    const tempInput = document.createElement('textarea');
-                    tempInput.value = v;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempInput);
-
-                    btn.textContent = "Copied!";
-                    feedback.textContent = "Link successfully copied using fallback method.";
-                    feedback.classList.remove("hidden");
-                    
-                    setTimeout(() => {
-                        btn.textContent = "Copy Link";
-                    }, 2000);
-                } catch (execErr) {
-                    btn.textContent = "Copy Failed";
-                    feedback.textContent = "Copy failed. Please manually select the URL above and copy it.";
-                    feedback.classList.remove("hidden");
-                    console.error("Copy failed via both methods.", execErr);
-
-                    setTimeout(() => {
-                        btn.textContent = "Copy Link";
-                    }, 3000);
-                }
-            }
-        });
-    </script>
+    // Copy Link UX
+    qs("#copyLink").addEventListener("click", async () => {
+      const v = qs("#shareUrl").value;
+      const btn = qs("#copyLink");
+      const feedback = qs("#copyFeedback");
+      btn.textContent = "Copying..."; feedback.classList.add("hidden");
+      try { await navigator.clipboard.writeText(v); btn.textContent = "Copied!"; feedback.textContent = "Link successfully copied to clipboard."; feedback.classList.remove("hidden"); setTimeout(() => { btn.textContent = "Copy Link"; }, 2000); }
+      catch { btn.textContent = "Copy Failed"; feedback.textContent = "Copy failed. Please copy manually."; feedback.classList.remove("hidden"); setTimeout(() => { btn.textContent = "Copy Link"; }, 3000); }
+    });
+  </script>
 </body>
-
 </html>
-
